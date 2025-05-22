@@ -27,7 +27,7 @@ export default function RootLayout({
     <ClerkProvider afterSignOutUrl="/">
       <html lang="en">
         <body className={poppins.variable}>
-          <Header />
+          
           {children}
         </body>
       </html>
