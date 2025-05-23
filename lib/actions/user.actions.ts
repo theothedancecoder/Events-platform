@@ -1,17 +1,15 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import User from '../mongodb/database/models/user.model'
-import Order from '../mongodb/database/models/order.model'
-import Event from '../mongodb/database/models/event.model'
+import User from '@/lib/mongodb/database/models/user.model'
+import Order from '@/lib/mongodb/database/models/order.model'
+import Event from '@/lib/mongodb/database/models/event.model'
 import { handleError } from '@/lib/utils'
 import { CreateUserParams, UpdateUserParams } from '@/types'
-import { connectToDatabase } from '../mongodb/database'
+import { connectToDatabase } from '@/lib/mongodb/database'
 
-
-export  const createUser= async (user: CreateUserParams)=> {
+export const createUser = async (user: CreateUserParams) => {
   try {
-    
     console.log('Connecting to database...')
     await connectToDatabase()
     console.log('Connected to database')
@@ -20,10 +18,15 @@ export  const createUser= async (user: CreateUserParams)=> {
     const newUser = await User.create(user)
     console.log('User created successfully:', JSON.stringify(newUser, null, 2))
 
+    if (!newUser) {
+      throw new Error('Failed to create user')
+    }
+
     return JSON.parse(JSON.stringify(newUser))
   } catch (error) {
     console.error('Error creating user:', error)
     handleError(error)
+    return null
   }
 }
 
@@ -36,7 +39,9 @@ export async function getUserById(userId: string) {
     if (!user) throw new Error('User not found')
     return JSON.parse(JSON.stringify(user))
   } catch (error) {
+    console.error('Error getting user:', error)
     handleError(error)
+    return null
   }
 }
 
@@ -49,7 +54,9 @@ export async function updateUser(clerkId: string, user: UpdateUserParams) {
     if (!updatedUser) throw new Error('User update failed')
     return JSON.parse(JSON.stringify(updatedUser))
   } catch (error) {
+    console.error('Error updating user:', error)
     handleError(error)
+    return null
   }
 }
 
@@ -82,6 +89,8 @@ export async function deleteUser(clerkId: string) {
 
     return deletedUser ? JSON.parse(JSON.stringify(deletedUser)) : null
   } catch (error) {
+    console.error('Error deleting user:', error)
     handleError(error)
+    return null
   }
 }
