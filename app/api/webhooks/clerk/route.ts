@@ -60,7 +60,9 @@ export async function POST(req: NextRequest) {
    
     return new Response('', { status: 200 })
   } catch (err) {
-    console.error('Error verifying webhook:', err)
-    return new Response('Error verifying webhook', { status: 400 })
+    console.error('Error in webhook:', err)
+    console.log('Request body:', await req.clone().text())  // Clone the request before reading body
+    console.log('Error details:', JSON.stringify(err, null, 2))
+    return new Response(`Error in webhook: ${err instanceof Error ? err.message : 'Unknown error'}`, { status: 400 })
   }
 }

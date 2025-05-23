@@ -11,11 +11,17 @@ import { connectToDatabse } from '../mongodb/database'
 
 export async function createUser(user: CreateUserParams) {
   try {
+    console.log('Connecting to database...')
     await connectToDatabse()
+    console.log('Connected to database')
 
+    console.log('Creating user with data:', JSON.stringify(user, null, 2))
     const newUser = await User.create(user)
+    console.log('User created successfully:', JSON.stringify(newUser, null, 2))
+
     return JSON.parse(JSON.stringify(newUser))
   } catch (error) {
+    console.error('Error creating user:', error)
     handleError(error)
   }
 }
