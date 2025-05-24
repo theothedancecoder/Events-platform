@@ -7,26 +7,57 @@ import Event from '@/lib/mongodb/database/models/event.model'
 import { handleError } from '@/lib/utils'
 import { CreateUserParams, UpdateUserParams } from '@/types'
 import { connectToDatabase } from '@/lib/mongodb/database'
+import mongoose from 'mongoose'
 
 export const createUser = async (user: CreateUserParams) => {
   try {
     console.log('Connecting to database...')
-    await connectToDatabase()
+    const connection = await connectToDatabase()
     console.log('Connected to database')
 
-    console.log('Creating user with data:', JSON.stringify(user, null, 2))
-    const newUser = await User.create(user)
-    console.log('User created successfully:', JSON.stringify(newUser, null, 2))
+    // Get the users collection directly
+    const db = connection.connection.db
+    const usersCollection = db.collection('users')
 
-    if (!newUser) {
-      throw new Error('Failed to create user')
-    }
+    // Use findOneAndUpdate with upsert to either update or insert
+    const result = await usersCollection.findOneAndUpdate(
+      { clerkId: user.clerkId }, // find criteria
+      {
+        $setOnInsert: {
+          ...user,
+          _id: new mongoose.Types.ObjectId(),
+          createdAt: new Date()
+        },
+        $set: {
+          updatedAt: new Date()
+        }
+      },
+      {
+        upsert: true, // create if doesn't exist
+        returnDocument: 'after' // return the updated/inserted document
+      }
+    )
 
-    return JSON.parse(JSON.stringify(newUser))
+    console.log('User processed:', result)
+    return result
   } catch (error) {
-    console.error('Error creating user:', error)
-    handleError(error)
-    return null
+    console.error('Error in createUser:', error)
+    // If it's a duplicate key error, try to fetch the existing user
+    if ((error as any)?.code === 11000) {
+      try {
+        const connection = await connectToDatabase()
+        const db = connection.connection.db
+        const usersCollection = db.collection('users')
+        const existingUser = await usersCollection.findOne({ clerkId: user.clerkId })
+        if (existingUser) {
+          console.log('Found existing user:', existingUser)
+          return existingUser
+        }
+      } catch (fetchError) {
+        console.error('Error fetching existing user:', fetchError)
+      }
+    }
+    throw error
   }
 }
 
