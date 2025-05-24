@@ -1,12 +1,26 @@
 import EventForm from "@/components/ui/shared/EventForm";
 import { auth } from "@clerk/nextjs/server";
-
-
+import { createUser } from "@/lib/actions/user.actions";
 
 const CreateEvent = async () => {
-  const { sessionClaims } = await auth();
+  const { sessionClaims, userId } = await auth();
+  
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
 
-  const userId = sessionClaims?.userId as string;
+  // Get user details from session claims
+  const user = {
+    clerkId: userId,
+    email: sessionClaims?.email as string,
+    username: sessionClaims?.username as string,
+    firstName: sessionClaims?.firstName as string,
+    lastName: sessionClaims?.lastName as string,
+    photo: sessionClaims?.photo as string
+  };
+
+  // Create or get existing user in MongoDB
+  await createUser(user);
 
   return (
     <>
