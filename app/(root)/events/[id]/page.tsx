@@ -3,9 +3,27 @@ import { formatDateTime } from '@/lib/utils';
 import { SearchParamProps } from '@/types'
 import Image from 'next/image';
 
+function isValidImageUrl(url: string) {
+  try {
+    const parsedUrl = new URL(url);
+    // Allow URLs from known upload domains without typical image extensions
+    const allowedHostnames = ['utfs.io', 'sea1.ingest.uploadthing.com', 'yfg7y7pev1.ufs.sh'];
+    if (allowedHostnames.includes(parsedUrl.hostname)) {
+      return true;
+    }
+    // Basic check for image file extensions
+    return /\.(jpeg|jpg|gif|png|webp|svg|bmp|tiff?)$/i.test(parsedUrl.pathname);
+  } catch {
+    return false;
+  }
+}
+
 const EventDetails = async ({ params }: SearchParamProps) => {
-  const { id } = params 
-  const event = await getEventById(id)
+  const resolvedParams = await params;   // <-- await params first
+  const { id } = resolvedParams;
+  const event = await getEventById(id);
+
+  const hasValidImage = event.imageUrl && isValidImageUrl(event.imageUrl);
 
   return (
     <>
@@ -13,8 +31,8 @@ const EventDetails = async ({ params }: SearchParamProps) => {
         <div className="grid grid-cols-1 md:grid-cols-2 2xl:max-w-7xl">
           
           {/* ✅ Conditionally render image to avoid missing src error */}
-          {event.imageUrl ? (
-            <Image 
+          {hasValidImage ? (
+            <img 
               src={event.imageUrl}
               alt="hero image"
               width={1000}

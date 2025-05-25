@@ -39,8 +39,8 @@ export function FileUploader({ imageUrl, onFieldChange, setFiles }: FileUploader
             onClientUploadComplete={(res) => {
               setIsUploading(false)
               if (res?.[0]) {
-                setFiles([new File([], res[0].name)])
-                onFieldChange(res[0].url)
+                setFiles([]) // Clear files or set appropriately if needed
+                onFieldChange(res[0].ufsUrl)
               }
             }}
             onUploadError={(error: Error) => {

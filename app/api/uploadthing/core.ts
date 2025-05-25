@@ -29,9 +29,11 @@ export const ourFileRouter = {
       // This code RUNS ON YOUR SERVER after upload
       console.log("Upload complete for userId:", metadata.userId);
       console.log("file url", file.url);
+      console.log("file object", file);
+      console.log("metadata object", metadata);
 
       // Return the file URL to the client
-      return { url: file.url };
+      return { ufsUrl: file.url };
     }),
 } satisfies FileRouter;
 

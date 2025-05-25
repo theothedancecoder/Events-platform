@@ -26,22 +26,21 @@ const populateEvent = (query: any) => {
     .populate({ path: 'category', model: Category, select: '_id name' })
 }
 
-// CREATE
-export const createEvent = async({ userId, event, path }: CreateEventParams)=> {
+function isValidImageUrl(url: string) {
   try {
-    await connectToDatabase()
-
-    const organizer = await User.findOne ({clerkId:userId} )
-    if (!organizer) {throw new Error('Organizer not found')}
-
-    const newEvent = await Event.create({ ...event, category: event.categoryId, organizer: organizer._id })
-   return JSON.parse(JSON.stringify(newEvent))
-  } catch (error) {
-    handleError(error)
+    const parsedUrl = new URL(url);
+    // Allow URLs from known upload domains without typical image extensions
+    const allowedHostnames = ['utfs.io', 'sea1.ingest.uploadthing.com', 'yfg7y7pev1.ufs.sh'];
+    if (allowedHostnames.includes(parsedUrl.hostname)) {
+      return true;
+    }
+    // Basic check for image file extensions
+    return /\.(jpeg|jpg|gif|png|webp|svg|bmp|tiff?)$/i.test(parsedUrl.pathname);
+  } catch {
+    return false;
   }
 }
 
-// GET ONE EVENT BY ID
 export async function getEventById(eventId: string) {
   try {
     await connectToDatabase()
@@ -53,6 +52,26 @@ export async function getEventById(eventId: string) {
     return JSON.parse(JSON.stringify(event))
   } catch (error) {
     console.log(error)
+    handleError(error)
+  }
+}
+
+// CREATE
+export const createEvent = async({ userId, event, path }: CreateEventParams)=> {
+  try {
+    await connectToDatabase()
+
+    const organizer = await User.findOne ({clerkId:userId} )
+    if (!organizer) {throw new Error('Organizer not found')}
+
+    // Validate imageUrl
+    if (event.imageUrl && !isValidImageUrl(event.imageUrl)) {
+      throw new Error('Invalid image URL')
+    }
+
+    const newEvent = await Event.create({ ...event, category: event.categoryId, organizer: organizer._id })
+   return JSON.parse(JSON.stringify(newEvent))
+  } catch (error) {
     handleError(error)
   }
 }
@@ -70,6 +89,11 @@ export async function updateEvent({ userId, event, path }: UpdateEventParams) {
       throw new Error('Unauthorized or event not found')
     }
 
+    // Validate imageUrl
+    if (event.imageUrl && !isValidImageUrl(event.imageUrl)) {
+      throw new Error('Invalid image URL')
+    }
+
     const updatedEvent = await Event.findByIdAndUpdate(
       event._id,
       { ...event, category: event.categoryId },
@@ -82,6 +106,7 @@ export async function updateEvent({ userId, event, path }: UpdateEventParams) {
     handleError(error)
   }
 }
+
 
 // DELETE
 export async function deleteEvent({ eventId, path }: DeleteEventParams) {
