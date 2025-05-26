@@ -174,11 +174,15 @@ export async function getAllEvents({ query, limit = 6, page, category }: GetAllE
     const eventsCount = await Event.countDocuments(conditions)
 
     return {
-      data: JSON.parse(JSON.stringify(events)),
+      data: JSON.parse(JSON.stringify(events || [])),
       totalPages: Math.ceil(eventsCount / limit),
     }
   } catch (error) {
-    handleError(error)
+    console.error('Error in getAllEvents:', error);
+    return {
+      data: [],
+      totalPages: 0,
+    }
   }
 }
 
