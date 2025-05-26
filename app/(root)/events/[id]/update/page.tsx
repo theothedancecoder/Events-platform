@@ -9,25 +9,21 @@ type UpdateEventProps ={
 
 }
 
-const UpdateEvents = async({params:{id}}:UpdateEventProps) => {
-  
+const UpdateEvents = async({ params }: { params: { id: string } }) => {
+  const { sessionClaims } = await auth()
 
-  
-  
-    const {sessionClaims} = await auth()
+  const userId = sessionClaims?.sub as string
+  const event = await getEventById(params.id)
 
-    const userId = sessionClaims?.userId as string
-    const event = await getEventById(id)
-
-    return (
-      <>
+  return (
+    <>
       <section className='bg-primary-50 bg-dotted-pattern bg-cover bg-center py-5 md:py-10'>
-       <h3 className='wrapper h3-bold text-center'>Update Event</h3>
+        <h3 className='wrapper h3-bold text-center'>Update Event</h3>
       </section>
       
       <div className="wrapper my-8">
-      <EventForm userId={userId} type ="Update" event= {event} />
-    </div>
+        <EventForm userId={userId} type="Update" event={event} />
+      </div>
     </>
   )
 }
