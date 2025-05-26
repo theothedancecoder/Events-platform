@@ -44,8 +44,10 @@ function isValidImageUrl(url: string) {
 export async function getEventById(eventId: string) {
   try {
     await connectToDatabase()
+    console.log('getEventById eventId:', eventId)
 
     const event = await populateEvent(Event.findById(eventId))
+    console.log('getEventById event:', event)
 
     if (!event) throw new Error('Event not found')
 
@@ -81,12 +83,19 @@ export async function updateEvent({ userId, event, path }: UpdateEventParams) {
   try {
     await connectToDatabase()
 
+    console.log('getEventsByUser userId:', userId)
     const organizer = await User.findOne({ clerkId: userId })
+    console.log('getEventsByUser organizer:', organizer)
     if (!organizer) throw new Error('Organizer not found')
 
     const eventToUpdate = await Event.findById(event._id)
-    if (!eventToUpdate || eventToUpdate.organizer.toString() !== organizer._id.toString()) {
-      throw new Error('Unauthorized or event not found')
+    if (!eventToUpdate) {
+      throw new Error('Event not found')
+    }
+    // Update organizer field if it does not match
+    if (eventToUpdate.organizer.toString() !== organizer._id.toString()) {
+      eventToUpdate.organizer = organizer._id
+      await eventToUpdate.save()
     }
 
     // Validate imageUrl
