@@ -3,7 +3,6 @@ import Collection from '@/components/ui/shared/Collection';
 import { getEventById, getRelatedEventsByCategory } from '@/lib/actions/event.actions'
 import Event from '@/lib/mongodb/database/models/event.model';
 import { formatDateTime } from '@/lib/utils';
-import { SearchParamProps } from '@/types'
 import Image from 'next/image';
 
 function isValidImageUrl(url: string) {
@@ -21,18 +20,17 @@ function isValidImageUrl(url: string) {
   }
 }
 
-const EventDetails = async (props: SearchParamProps) => {
-  const resolvedParams = await props.params;
-  const resolvedSearchParams = await props.searchParams;
-  const id = resolvedParams.id;
-
+const EventDetails = async (props: any) => {
+  const id = props.params.id;
+  const searchParams = props.searchParams;
+  
   const event = await getEventById(id);
 
   const relatedEvents = await getRelatedEventsByCategory({
     categoryId: event.category._id,
     eventId: event._id,
-    page: resolvedSearchParams.page as string
-  }) ?? [];
+    page: searchParams.page as string
+  }) ?? { data: [], totalPages: 0 };
 
   const hasValidImage = event.imageUrl && isValidImageUrl(event.imageUrl);
 
@@ -78,8 +76,6 @@ const EventDetails = async (props: SearchParamProps) => {
                 </p>
               </div>
             </div>
-            {/*Checkout Button*/}
-            <CheckoutButton event={event}/>
 
             <div className="flex flex-col gap-5">
               <div className="flex gap-2 md:gap-3">
@@ -117,17 +113,18 @@ const EventDetails = async (props: SearchParamProps) => {
       <section className="wrapper my-8 flex flex-col gap-8 md:gap-12">
         <h2 className="h2-bold">Related Events</h2>
         <Collection
-          data={relatedEvents?.data ?? []}
+          data={relatedEvents.data}
           emptyTitle="No Events Found"
           emptyStateSubtext="Come back later"
           collectionType="All_Events"
           limit={6}
           page={1}
-          totalPages={relatedEvents?.totalPages ?? 2}
+          totalPages={relatedEvents.totalPages}
         />
       </section>
     </>
   )
 }
+
 
 export default EventDetails
