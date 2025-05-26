@@ -143,8 +143,8 @@ export type CreateUserParams = {
     keysToRemove: string[]
   }
   
-  export type SearchParamProps = {
-    params: Promise<{ id: string }>;
-    searchParams: { [key: string]: string | string[] | undefined }
-  }
-  
+// ✅ Correct
+export type SearchParamProps = {
+  params: { id: string }
+  searchParams: { [key: string]: string | undefined }
+}

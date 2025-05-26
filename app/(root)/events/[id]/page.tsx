@@ -1,6 +1,6 @@
 import CheckoutButton from '@/components/ui/shared/CheckoutButton';
 import Collection from '@/components/ui/shared/Collection';
-import { getEventById, getRelatedEventsByCategory } from '@/lib/actions/event.actions'
+import { getEventById, getRelatedEventsByCategory, getAllEvents } from '@/lib/actions/event.actions'
 import Event from '@/lib/mongodb/database/models/event.model';
 import { formatDateTime } from '@/lib/utils';
 import Image from 'next/image';
@@ -21,18 +21,19 @@ function isValidImageUrl(url: string) {
 }
 
 const EventDetails = async (props: any) => {
-  const id = props.params.id;
-  const searchParams = props.searchParams;
+  const resolvedParams = await props.params;
+  const resolvedSearchParams = await props.searchParams;
   
-  const event = await getEventById(id);
-
-  const relatedEvents = await getRelatedEventsByCategory({
-    categoryId: event.category._id,
-    eventId: event._id,
-    page: searchParams.page as string
+  const event = await getEventById(resolvedParams.id);
+  const relatedEvents = await getAllEvents({
+    category: event.category._id,
+    page: Number(resolvedSearchParams.page) || 1,
+    query: '',
+    limit: 6
   }) ?? { data: [], totalPages: 0 };
 
   const hasValidImage = event.imageUrl && isValidImageUrl(event.imageUrl);
+
 
   return (
     <>
