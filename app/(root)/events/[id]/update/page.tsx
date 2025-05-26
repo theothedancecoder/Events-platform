@@ -1,17 +1,18 @@
 import EventForm from '@/components/ui/shared/EventForm'
 import { getEventById } from '@/lib/actions/event.actions'
-import { UpdateEventParams } from '@/types'
 import { auth } from '@clerk/nextjs/server'
 import React from 'react'
+import { Metadata } from 'next'
 
-type UpdateEventProps ={
-  params: { id: string }
-
+// Use Next.js defined type for params:
+interface PageProps {
+  params: {
+    id: string
+  }
 }
 
-const UpdateEvents = async({ params }: { params: { id: string } }) => {
+const UpdateEvent = async ({ params }: PageProps) => {
   const { sessionClaims } = await auth()
-
   const userId = sessionClaims?.sub as string
   const event = await getEventById(params.id)
 
@@ -28,4 +29,4 @@ const UpdateEvents = async({ params }: { params: { id: string } }) => {
   )
 }
 
-export default UpdateEvents
+export default UpdateEvent
