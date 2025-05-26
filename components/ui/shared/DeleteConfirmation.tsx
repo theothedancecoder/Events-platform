@@ -3,6 +3,7 @@
 import { useTransition } from 'react'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
+import { useUser } from '@clerk/nextjs'
 
 import {
   AlertDialog,
@@ -21,6 +22,7 @@ import { deleteEvent } from '@/lib/actions/event.actions'
 export const DeleteConfirmation = ({ eventId }: { eventId: string }) => {
   const pathname = usePathname()
   let [isPending, startTransition] = useTransition()
+  const { user } = useUser()
 
   return (
     <AlertDialog>
@@ -42,7 +44,12 @@ export const DeleteConfirmation = ({ eventId }: { eventId: string }) => {
           <AlertDialogAction
             onClick={() =>
               startTransition(async () => {
-                await deleteEvent({ eventId, path: pathname })
+                if (!user?.id) return
+                await deleteEvent({ 
+                  userId: user.id,
+                  eventId, 
+                  path: pathname 
+                })
               })
             }>
             {isPending ? 'Deleting...' : 'Delete'}

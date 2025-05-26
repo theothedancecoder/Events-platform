@@ -52,6 +52,7 @@ export type UpdateEventParams = {
 }
 
 export type DeleteEventParams = {
+  userId: string
   eventId: string
   path: string
 }

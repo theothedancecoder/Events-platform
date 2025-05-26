@@ -42,19 +42,18 @@ function isValidImageUrl(url: string) {
 }
 
 export async function getEventById(eventId: string) {
+  if (!eventId) return null;
+  
   try {
-    await connectToDatabase()
-    console.log('getEventById eventId:', eventId)
-
-    const event = await populateEvent(Event.findById(eventId))
-    console.log('getEventById event:', event)
-
-    if (!event) throw new Error('Event not found')
-
-    return JSON.parse(JSON.stringify(event))
+    await connectToDatabase();
+    const event = await populateEvent(Event.findById(eventId));
+    
+    if (!event) return null;
+    
+    return JSON.parse(JSON.stringify(event));
   } catch (error) {
-    console.log(error)
-    handleError(error)
+    console.error('Error in getEventById:', error);
+    return null;
   }
 }
 
@@ -83,19 +82,23 @@ export async function updateEvent({ userId, event, path }: UpdateEventParams) {
   try {
     await connectToDatabase()
 
-    console.log('getEventsByUser userId:', userId)
-    const organizer = await User.findOne({ clerkId: userId })
-    console.log('getEventsByUser organizer:', organizer)
+    console.log('updateEvent userId:', userId)
+    // Try finding by clerkId first, if not found, try finding by _id
+    let organizer = await User.findOne({ clerkId: userId })
+    if (!organizer) {
+      organizer = await User.findById(userId)
+    }
+    console.log('updateEvent organizer:', organizer)
     if (!organizer) throw new Error('Organizer not found')
 
     const eventToUpdate = await Event.findById(event._id)
     if (!eventToUpdate) {
       throw new Error('Event not found')
     }
-    // Update organizer field if it does not match
+
+    // Check if the user is the organizer of the event
     if (eventToUpdate.organizer.toString() !== organizer._id.toString()) {
-      eventToUpdate.organizer = organizer._id
-      await eventToUpdate.save()
+      throw new Error('Unauthorized: You are not the organizer of this event')
     }
 
     // Validate imageUrl
@@ -118,10 +121,31 @@ export async function updateEvent({ userId, event, path }: UpdateEventParams) {
 
 
 // DELETE
-export async function deleteEvent({ eventId, path }: DeleteEventParams) {
+export async function deleteEvent({ userId, eventId, path }: DeleteEventParams) {
   try {
     await connectToDatabase()
 
+    // Find the current user
+    let organizer = await User.findOne({ clerkId: userId })
+    if (!organizer) {
+      organizer = await User.findById(userId)
+    }
+    if (!organizer) {
+      throw new Error('Unauthorized: Could not verify user')
+    }
+
+    // Find the event
+    const event = await Event.findById(eventId)
+    if (!event) {
+      throw new Error('Event not found')
+    }
+
+    // Check if the user is the organizer of the event
+    if (event.organizer.toString() !== organizer._id.toString()) {
+      throw new Error('Unauthorized: You are not the organizer of this event')
+    }
+
+    // Delete the event
     const deletedEvent = await Event.findByIdAndDelete(eventId)
     if (deletedEvent) revalidatePath(path)
   } catch (error) {
@@ -163,11 +187,17 @@ export async function getEventsByUser({ userId, limit = 6, page }: GetEventsByUs
   try {
     await connectToDatabase()
 
-    const organizer = await User.findOne({ clerkId: userId })
+    console.log('getEventsByUser userId:', userId)
+    // Try finding by clerkId first, if not found, try finding by _id
+    let organizer = await User.findOne({ clerkId: userId })
+    if (!organizer) {
+      organizer = await User.findById(userId)
+    }
+    console.log('getEventsByUser organizer:', organizer)
     if (!organizer) throw new Error('Organizer not found')
 
     const conditions = { organizer: organizer._id }
-    const skipAmount = (page - 1) * limit
+    const skipAmount = (Number(page) - 1) * limit
 
     const eventsQuery = Event.find(conditions)
       .sort({ createdAt: 'desc' })
