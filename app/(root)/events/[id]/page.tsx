@@ -6,9 +6,9 @@ import { SearchParamProps } from '@/types';
 import Image from 'next/image';
 
 const EventDetails = async ({ params, searchParams }: SearchParamProps) => {
-  const { id } = await params; // Await params to access id
+  const { id } = params; // No need to await params
   const event = await getEventById(id);
-  const page = (await searchParams).page as string; // Await searchParams to access page
+  const page = searchParams.page as string; // No need to await searchParams
   const relatedEvents = await getRelatedEventsByCategory({
     categoryId: event.category._id,
     eventId: event._id,
