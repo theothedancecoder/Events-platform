@@ -7,30 +7,41 @@ import { auth } from '@clerk/nextjs/server'
 import Link from 'next/link'
 import React from 'react'
 import { IOrder } from '@/lib/mongodb/database/models/order.model'
+import { IEvent } from '@/lib/mongodb/database/models/event.model'
 
 const ProfilePage = async ({ searchParams }: SearchParamProps) => {
-  const { sessionClaims } = await auth();
-  const userId = sessionClaims?.userId as string;
+  const { userId } = await auth();
+
+  if (!userId) {
+    return (
+      <section className="wrapper my-8">
+        <h3 className="text-red-600 text-center">
+          Please sign in to view your profile.
+        </h3>
+      </section>
+    );
+  }
 
   const ordersPage = Number((await searchParams)?.ordersPage) || 1;
   const eventsPage = Number((await searchParams)?.eventsPage) || 1;
 
   let orders = null;
-  let orderedEvents: IOrder[] = [];
+  let orderedEvents: IEvent[] = [];
   let organizedEvents = null;
   let organizerNotFound = false;
 
   try {
     orders = await getOrdersByUser({ userId, page: ordersPage });
-    orderedEvents = orders?.data.map((order: IOrder) => order.event) || [];
+    // Ensure we're getting the full event data from orders
+    orderedEvents = orders?.data.map((order: IOrder) => order.event as unknown as IEvent) || [];
   } catch (error) {
     console.error('Error fetching orders:', error);
   }
 
   try {
     organizedEvents = await getEventsByUser({ userId, page: eventsPage });
-  } catch (error) {
-    if (error.message === 'Organizer not found') {
+  } catch (error: any) {
+    if (error?.message === 'Organizer not found') {
       organizerNotFound = true;
     } else {
       console.error('Error fetching organized events:', error);

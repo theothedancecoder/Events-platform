@@ -24,10 +24,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider afterSignOutUrl="/">
+    <ClerkProvider 
+      afterSignOutUrl="/"
+      appearance={{
+        elements: {
+          formButtonPrimary: 'primary-gradient',
+          footerActionLink: 'primary-text-gradient hover:text-primary-500'
+        }
+      }}
+      signIn={{
+        appearance: {
+          elements: {
+            formButtonPrimary: 'primary-gradient',
+            footerActionLink: 'primary-text-gradient hover:text-primary-500'
+          }
+        }
+      }}
+    >
       <html lang="en">
         <body className={poppins.variable}>
-          
           {children}
         </body>
       </html>

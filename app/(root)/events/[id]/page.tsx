@@ -2,18 +2,28 @@ import CheckoutButton from '@/components/ui/shared/CheckoutButton';
 import Collection from '@/components/ui/shared/Collection';
 import { getEventById, getRelatedEventsByCategory } from '@/lib/actions/event.actions'
 import { formatDateTime } from '@/lib/utils';
+import { formatPriceDisplay } from '@/lib/utils/currency';
 import { SearchParamProps } from '@/types'
 import Image from 'next/image';
 
-const EventDetails = async ({ params: { id }, searchParams }: SearchParamProps) => {
-  const event = await getEventById(id);
+const EventDetails = async ({ params, searchParams }: SearchParamProps) => {
+  const awaitedParams = await params;
+  const awaitedSearchParams = await searchParams;
 
-  const page = await searchParams.page as string
+  const event = await getEventById(awaitedParams.id);
+
+  if (!event) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h3 className="h3-bold text-grey-600">Event not found</h3>
+      </div>
+    );
+  }
 
   const relatedEvents = await getRelatedEventsByCategory({
     categoryId: event.category._id,
     eventId: event._id,
-    page: searchParams.page as string,
+    page: String(awaitedSearchParams?.page || 1),
   })
 
   return (
@@ -35,7 +45,7 @@ const EventDetails = async ({ params: { id }, searchParams }: SearchParamProps) 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="flex gap-3">
                 <p className="p-bold-20 rounded-full bg-green-500/10 px-5 py-2 text-green-700">
-                  {event.isFree ? 'FREE' : `$${event.price}`}
+                  {formatPriceDisplay(event.price, event.isFree)}
                 </p>
                 <p className="p-medium-16 rounded-full bg-grey-500/10 px-4 py-2.5 text-grey-500">
                   {event.category.name}
@@ -91,7 +101,7 @@ const EventDetails = async ({ params: { id }, searchParams }: SearchParamProps) 
           emptyStateSubtext="Come back later"
           collectionType="All_Events"
           limit={3}
-          page={page}
+          page={awaitedSearchParams?.page ? Number(awaitedSearchParams.page) : 1}
           totalPages={relatedEvents?.totalPages}
         />
     </section>

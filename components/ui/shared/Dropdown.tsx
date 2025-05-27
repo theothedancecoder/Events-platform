@@ -25,7 +25,7 @@ import { ICategory } from "@/lib/mongodb/database/models/category.model"
   
   type DropdownProps = {
     value?: string
-    onChangeHandler?: () => void
+    onChangeHandler?: (value: string) => void
   }
   
   const Dropdown = ({ value, onChangeHandler }: DropdownProps) => {
@@ -69,12 +69,25 @@ import { ICategory } from "@/lib/mongodb/database/models/category.model"
               <AlertDialogHeader>
                 <AlertDialogTitle>New Category</AlertDialogTitle>
                 <AlertDialogDescription>
-                  <Input type="text" placeholder="Category name" className="input-field mt-3" onChange={(e) => setNewCategory(e.target.value)} />
+                  <Input 
+                    type="text" 
+                    placeholder="Category name" 
+                    className="input-field mt-3" 
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    value={newCategory}
+                  />
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => startTransition(handleAddCategory)}>Add</AlertDialogAction>
+                <AlertDialogCancel onClick={() => setNewCategory('')}>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={() => {
+                    startTransition(handleAddCategory)
+                    setNewCategory('')
+                  }}
+                >
+                  Add
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

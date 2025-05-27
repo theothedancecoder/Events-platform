@@ -18,11 +18,9 @@ import { useRouter } from "next/navigation"
 import { EventFormSchema } from "@/lib/validator"
 import { FileUploader } from "./FileUploader"
 import { Checkbox } from "../checkbox"
-import { updateEvent,createEvent } from "@/lib/actions/event.actions"
+import { updateEvent, createEvent } from "@/lib/actions/event.actions"
 import { IEvent } from "@/lib/mongodb/database/models/event.model"
-
-
-
+import { CURRENCY } from "@/constants/currency"
 
 type EventFormProps = {
   userId: string
@@ -52,8 +50,6 @@ const EventForm = ({ userId, type, event, eventId }: EventFormProps) => {
   async function onSubmit(values: z.infer<typeof EventFormSchema>) {
     let uploadedImageUrl = values.imageUrl;
 
-    console.log("Uploading image with URL:", uploadedImageUrl); // Debug log
-
     if(files.length > 0) {
       const uploadedImages = await startUpload(files)
 
@@ -62,14 +58,12 @@ const EventForm = ({ userId, type, event, eventId }: EventFormProps) => {
       }
 
       uploadedImageUrl = uploadedImages[0].ufsUrl
-
-      console.log("Uploaded image URL:", uploadedImageUrl); // Debug log
     }
 
     if(type === 'Create') {
       try {
         const newEvent = await createEvent({
-          event: { ...values, imageUrl: uploadedImageUrl, categoryId: values.CategoryId },
+          event: { ...values, imageUrl: uploadedImageUrl },
           userId,
           path: '/profile'
         })
@@ -92,7 +86,7 @@ const EventForm = ({ userId, type, event, eventId }: EventFormProps) => {
       try {
         const updatedEvent = await updateEvent({
           userId,
-          event: { ...values, imageUrl: uploadedImageUrl, _id: eventId, categoryId: values.CategoryId},
+          event: { ...values, imageUrl: uploadedImageUrl, _id: eventId },
           path: `/events/${eventId}`
         })
 
@@ -124,7 +118,7 @@ const EventForm = ({ userId, type, event, eventId }: EventFormProps) => {
           />
           <FormField
             control={form.control}
-            name="CategoryId"
+            name="categoryId"
             render={({ field }) => (
               <FormItem className="w-full">
                 <FormControl>
@@ -241,9 +235,7 @@ const EventForm = ({ userId, type, event, eventId }: EventFormProps) => {
                       <p className="ml-3 whitespace-nowrap text-grey-600">End Date:</p>
                       <DatePicker 
                         selected={field.value} 
-                        onChange={(date: Date | null
-
-                        ) => field.onChange(date)} 
+                        onChange={(date: Date | null) => field.onChange(date)} 
                         showTimeSelect
                         timeInputLabel="Time:"
                         dateFormat="MM/dd/yyyy h:mm aa"
@@ -273,7 +265,16 @@ const EventForm = ({ userId, type, event, eventId }: EventFormProps) => {
                         height={24}
                         className="filter-grey"
                       />
-                      <Input type="number" placeholder="Price" {...field} className="p-regular-16 border-0 bg-grey-50 outline-offset-0 focus:border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      <div className="flex items-center gap-2">
+                        <span className="text-grey-600">{CURRENCY.symbol}</span>
+                        <Input 
+                          type="number" 
+                          placeholder="Price" 
+                          {...field} 
+                          className="p-regular-16 border-0 bg-grey-50 outline-offset-0 focus:border-0 focus-visible:ring-0 focus-visible:ring-offset-0" 
+                          disabled={form.watch('isFree')}
+                        />
+                      </div>
                       <FormField
                         control={form.control}
                         name="isFree"
@@ -283,18 +284,23 @@ const EventForm = ({ userId, type, event, eventId }: EventFormProps) => {
                               <div className="flex items-center">
                                 <label htmlFor="isFree" className="whitespace-nowrap pr-3 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Free Ticket</label>
                                 <Checkbox
-                                  onCheckedChange={field.onChange}
+                                  onCheckedChange={(checked) => {
+                                    field.onChange(checked);
+                                    if (checked) {
+                                      form.setValue('price', '0');
+                                    }
+                                  }}
                                   checked={field.value}
-                                id="isFree" className="mr-2 h-5 w-5 border-2 border-primary-500" />
+                                  id="isFree" 
+                                  className="mr-2 h-5 w-5 border-2 border-primary-500" 
+                                />
                               </div>
-          
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />   
                     </div>
-
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -323,7 +329,6 @@ const EventForm = ({ userId, type, event, eventId }: EventFormProps) => {
               )}
             />
         </div>
-
 
         <Button
           type="submit"

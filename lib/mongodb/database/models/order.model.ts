@@ -4,15 +4,8 @@ export interface IOrder extends Document {
   createdAt: Date
   stripeId: string
   totalAmount: string
-  event: {
-    _id: string
-    title: string
-  }
-  buyer: {
-    _id: string
-    firstName: string
-    lastName: string
-  }
+  event: Schema.Types.ObjectId
+  buyer: Schema.Types.ObjectId
 }
 
 export type IOrderItem = {
@@ -40,12 +33,19 @@ const OrderSchema = new Schema({
   event: {
     type: Schema.Types.ObjectId,
     ref: 'Event',
+    required: true
   },
   buyer: {
     type: Schema.Types.ObjectId,
     ref: 'User',
+    required: true
   },
 })
+
+// Add indexes for faster lookups
+OrderSchema.index({ event: 1 })
+OrderSchema.index({ buyer: 1 })
+// Removed duplicate stripeId index since it's already defined in the schema
 
 const Order = models.Order || model('Order', OrderSchema)
 
